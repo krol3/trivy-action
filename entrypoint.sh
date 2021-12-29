@@ -28,6 +28,7 @@ while getopts "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:" o; do
        ;;
        i)
          export imageRef=${OPTARG}
+         scanType="image" # FIX https://github.com/aquasecurity/trivy/discussions/1515"
        ;;
        j)
          export scanRef=${OPTARG}
@@ -130,16 +131,19 @@ if [ "$skipFiles" ];then
   done
 fi
 
-echo "Running trivy with options: ${ARGS}" "${artifactRef}"
-echo "Global options: " "${GLOBAL_ARGS}"
+printf "Global options: ${GLOBAL_ARGS}\n"
+printf "Scan type: ${scanType}\n"
+printf ">trivy $GLOBAL_ARGS ${scanType} $ARGS ${artifactRef}\n"
+
 trivy $GLOBAL_ARGS ${scanType} $ARGS ${artifactRef}
 returnCode=$?
 
 # SARIF is special. We output all vulnerabilities,
 # regardless of severity level specified in this report.
 # This is a feature, not a bug :)
-if [[ ${template} == *"sarif"* ]]; then
-  echo "Building SARIF report with options: ${SARIF_ARGS}" "${artifactRef}"
+if [ ! -z "$template" ] && [[ ${template} == *"sarif"* ]]; then
+  printf "Building SARIF report with options: ${SARIF_ARGS}\n"
+  printf ">trivy --quiet ${scanType} --format template --template ${template} --output ${output} $SARIF_ARGS ${artifactRef}\n"
   trivy --quiet ${scanType} --format template --template ${template} --output ${output} $SARIF_ARGS ${artifactRef}
 fi
 
