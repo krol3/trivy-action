@@ -21,7 +21,7 @@ jobs:
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.25.0
-          trivy -v
+          trivy image knqyf263/vuln-image:1.2.3
 
       - name: Run Shellcheck
         uses: azohra/shell-linter@latest
