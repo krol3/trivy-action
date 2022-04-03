@@ -1,30 +1,51 @@
 #shellcheck shell=sh
 
-Describe 'Entrypoint '
+Describe 'Image type'
+  image() {
+  sh entrypoint.sh '-a image' '-i knqyf263/vuln-image:1.2.3' '-b table' '-h image.test' '-g CRITICAL';
+  }
+  sarif() {
+  sh entrypoint.sh '-a image' '-i knqyf263/vuln-image:1.2.3' '-b sarif' '-h image-sarif.test' '-g CRITICAL';
+  }
+  Before 'image' 'sarif'
 
-It 'Test scan-type image'
-  When run source ./entrypoint.sh '-i knqyf263/vuln-image:1.2.3'
-  The stdout should match pattern '*Detected OS: alpine*'
+  compare_images() {
+    echo "$(diff ./spec/test-image.txt image.test)"
+  }
+
+  compare_sarif() {
+    echo "$(diff ./spec/test-image.sarif image-sarif.test)"
+  }
+
+  It '- compare image results'
+    When run compare_images
+    The output should eq ""
+  End
+
+  It '- compare image sarif results'
+    When run compare_sarif
+    The output should eq ""
+  End
 End
 
-It 'Test scan-type image and format json'
-  When run source ./entrypoint.sh '-i knqyf263/vuln-image:1.2.3' '-b json'
-  The stdout should match pattern '*"ArtifactName": "knqyf263/vuln-image:1.2.3",*'
+Describe 'Config type'
+  config() { sh entrypoint.sh '-a config' '-j .' '-b table' '-h config.test'; }
+  Before 'config'
+
+  compare_config() {
+    echo "$(diff ./spec/test-config.txt config.test)"
+  }
+
+  It '- compare results'
+    When run compare_config
+    The output should eq ""
+  End
 End
 
-It 'Test scan-type conf'
-  When run source ./entrypoint.sh '-a config' '-j .'
-  The stdout should match pattern '*Detected config files:*'
-End
+Describe 'rootfs type'
 
-It 'Test scan-type rootfs'
-  When run source ./entrypoint.sh '-a rootfs' '-j .'
-  The stdout should match pattern '*Number of language-specific files*'
-End
-
-It 'Test scan image sarif reports'
-  When run source ./entrypoint.sh '-i knqyf263/vuln-image:1.2.3' '-h myReport.sarif' '-b sarif'
-  The stdout should match pattern '*Number of language-specific files*'
-End
-
+  It '- compare results'
+    When run ./entrypoint.sh '-a rootfs' '-j .'
+    The stdout should match pattern '*Number of language-specific files: 0*'
+  End
 End
